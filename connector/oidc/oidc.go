@@ -117,10 +117,13 @@ type ProviderDiscoveryOverrides struct {
 	// JWKSURL provides a way to user overwrite the JWKS URL
 	// from the .well-known/openid-configuration jwks_uri
 	JWKSURL string `json:"jwksURL"`
+	// UserInfoURL providers a way to user overwrite the User Info URL
+	// from the .well-known/openid-configuration userinfo_endpoint
+	UserInfoURL string `json:"userInfoURL"`
 }
 
 func (o *ProviderDiscoveryOverrides) Empty() bool {
-	return o.TokenURL == "" && o.AuthURL == "" && o.JWKSURL == ""
+	return o.TokenURL == "" && o.AuthURL == "" && o.JWKSURL == "" && o.UserInfoURL == ""
 }
 
 func getProvider(ctx context.Context, issuer string, overrides ProviderDiscoveryOverrides) (*oidc.Provider, error) {
@@ -163,6 +166,9 @@ func getProvider(ctx context.Context, issuer string, overrides ProviderDiscovery
 	}
 	if overrides.JWKSURL != "" {
 		config.JWKSURL = overrides.JWKSURL
+	}
+	if overrides.UserInfoURL != "" {
+		config.UserInfoURL = overrides.UserInfoURL
 	}
 	return config.NewProvider(context.Background()), nil
 }
