@@ -488,10 +488,13 @@ func (c *oidcConnector) createIdentity(ctx context.Context, identity connector.I
 		}
 	}
 
-	const subjectClaimKey = "sub"
-	subject, found := claims[subjectClaimKey].(string)
+	userIDKey := "sub"
+	if c.userIDKey != "" {
+		userIDKey = c.userIDKey
+	}
+	userID, found := claims[userIDKey].(string)
 	if !found {
-		return identity, fmt.Errorf("missing \"%s\" claim", subjectClaimKey)
+		return identity, fmt.Errorf("missing user id claim, not found \"%s\" key", userIDKey)
 	}
 
 	userNameKey := "name"
@@ -624,21 +627,13 @@ func (c *oidcConnector) createIdentity(ctx context.Context, identity connector.I
 	}
 
 	identity = connector.Identity{
-		UserID:            subject,
+		UserID:            userID,
 		Username:          name,
 		PreferredUsername: preferredUsername,
 		Email:             email,
 		EmailVerified:     emailVerified,
 		Groups:            groups,
 		ConnectorData:     connData,
-	}
-
-	if c.userIDKey != "" {
-		userID, found := claims[c.userIDKey].(string)
-		if !found {
-			return identity, fmt.Errorf("oidc: not found %v claim", c.userIDKey)
-		}
-		identity.UserID = userID
 	}
 
 	return identity, nil
