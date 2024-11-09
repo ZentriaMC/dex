@@ -98,6 +98,9 @@ type Config struct {
 
 		// Configurable key which contains the groups claims
 		GroupsKey string `json:"groups"` // defaults to "groups"
+
+		// Configurable key which contains the email_verified claims
+		EmailVerifiedKey string `json:"email_verified"` // defaults to "email_verified"
 	} `json:"claimMapping"`
 
 	// ClaimMutations holds all claim mutations options
@@ -310,6 +313,7 @@ func (c *Config) Open(id string, logger *slog.Logger) (conn connector.Connector,
 		overrideClaimMapping:      c.OverrideClaimMapping,
 		preferredUsernameKey:      c.ClaimMapping.PreferredUsernameKey,
 		emailKey:                  c.ClaimMapping.EmailKey,
+		emailVerifiedKey:          c.ClaimMapping.EmailVerifiedKey,
 		groupsKey:                 c.ClaimMapping.GroupsKey,
 		newGroupFromClaims:        c.ClaimMutations.NewGroupFromClaims,
 		groupsFilter:              groupsFilter,
@@ -340,6 +344,7 @@ type oidcConnector struct {
 	overrideClaimMapping      bool
 	preferredUsernameKey      string
 	emailKey                  string
+	emailVerifiedKey          string
 	groupsKey                 string
 	newGroupFromClaims        []NewGroupFromClaims
 	groupsFilter              *regexp.Regexp
@@ -523,12 +528,18 @@ func (c *oidcConnector) createIdentity(ctx context.Context, identity connector.I
 		return identity, fmt.Errorf("missing email claim, not found \"%s\" key", emailKey)
 	}
 
-	emailVerified, found := claims["email_verified"].(bool)
+	emailVerifiedKey := "email_verified"
+	emailVerified, found := claims[emailVerifiedKey].(bool)
+	if (!found || c.overrideClaimMapping) && c.emailVerifiedKey != "" {
+		emailVerifiedKey = c.emailVerifiedKey
+		emailVerified, found = claims[emailVerifiedKey].(bool)
+	}
+
 	if !found {
 		if c.insecureSkipEmailVerified {
 			emailVerified = true
 		} else if hasEmailScope {
-			return identity, errors.New("missing \"email_verified\" claim")
+			return identity, fmt.Errorf("missing email verified claim, not found \"%s\" key", emailVerifiedKey)
 		}
 	}
 
