@@ -167,7 +167,8 @@ func (h *Handler) validateIDTokenHint(ctx context.Context, hint string) (*oidc.I
 		// Dex issued a token to — the caller does not know the expected audience in advance.
 		// The signature verification via signer.KeySet already guarantees the token was
 		// issued by this server. Dex does the client id check later during session validation.
-		SkipClientIDCheck: true,
+		SkipClientIDCheck:    true,
+		SupportedSigningAlgs: signer.SupportedSigningAlgs(),
 	})
 	return verifier.Verify(ctx, hint)
 }
